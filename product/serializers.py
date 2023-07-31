@@ -4,21 +4,21 @@ from product.models import Product,Category,CartProduct,Cart
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    
+    id=serializers.CharField(read_only=True)
     class Meta:
         model = Category
         fields = '__all__'
 
 class ProductSerializer(serializers.ModelSerializer):
-    # category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-    category = serializers.SerializerMethodField()
+
+    id=serializers.CharField(read_only=True)
+    category = serializers.SlugRelatedField(slug_field='name', queryset=Category.objects.all())
 
     class Meta:
         model = Product
         fields = '__all__'
 
-    def get_category(self, obj):
-        return obj.category.name if obj.category else None
+   
     
 class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
