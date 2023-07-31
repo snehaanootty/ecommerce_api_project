@@ -3,10 +3,14 @@ from rest_framework import viewsets
 from .models import Category, Product,Cart,CartProduct
 from .serializers import CategorySerializer, ProductSerializer,CartSerializer
 from rest_framework import authentication,permissions
-from rest_framework.permissions import IsAdminUser,AllowAny
+from rest_framework.permissions import IsAdminUser,AllowAny,IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework import generics
+
+
+
 
 class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -35,6 +39,8 @@ class CartViewSet(viewsets.ModelViewSet):
     serializer_class = CartSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+
+
 
 
     @action(detail=False, methods=['get'])
@@ -94,3 +100,42 @@ class CartViewSet(viewsets.ModelViewSet):
         serializer = CartSerializer(cart_item.cart)
         return Response(serializer.data)
         
+
+
+
+
+    # @action(detail=False, methods=['get'])
+    # def list_products_in_cart(self, request):
+    #     cart, created = Cart.objects.get_or_create(user=request.user)
+    #     cart_products = cart.cartproduct_set.all()  # Assuming a related name is defined for the CartProduct model
+
+    #     # Serialize the list of cart products
+    #     serializer = CartSerializer(cart_products, many=True)  # Assuming you have a serializer for CartProduct model
+    #     return Response(serializer.data)
+    
+
+    @action(detail=True, methods=['get'])
+
+    def list_cart_items(self, request, pk=None):
+        cart = self.get_object()
+        cart_items = cart.cartproduct_set.all()  # Assuming a related name is defined for the CartProduct model
+
+        # Get a list of products associated with the cart items
+        products = [cart_item.product for cart_item in cart_items]
+
+        # Serialize the cart and products
+        cart_serializer = CartSerializer(cart)
+        product_serializer = ProductSerializer(products, many=True)  # Assuming you have a serializer for Product model
+
+        # Combine the cart and product data into a single response
+        response_data = {
+            'cart': cart_serializer.data,
+            'products': product_serializer.data
+        }
+
+        return Response(response_data)
+
+# class CartDetailView(generics.RetrieveAPIView):
+#     queryset = Cart.objects.all()
+#     serializer_class = CartSerializer
+#     permission_classes = [IsAuthenticated]
